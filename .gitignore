@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+dist/
+result
+
+# Runtime state (incidents, control socket)
+.hammock/
+
+# Private stack configs never belong in this repo
+hammock.local.yaml
+*.local.yaml
