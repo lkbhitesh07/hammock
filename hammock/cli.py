@@ -17,6 +17,9 @@ from rich.text import Text
 from .config import Config, ConfigError, load_config
 from .console import LogPrinter
 from .control import AlreadyRunning, ControlServer, NotRunning, request, socket_path
+from .correlate import health_paths
+from .detectors import DetectorHub
+from .incidents import Incident, IncidentTracker, save_incident, service_exit_event
 from .logbus import LogBus
 from .runner import Runner
 
@@ -47,10 +50,52 @@ def up(config: ConfigOpt = None, with_: WithOpt = None) -> None:
     asyncio.run(_up(cfg, path, names))
 
 
+def _short_path(file: str, cfg: Config, service: str) -> str:
+    svc = cfg.services.get(service)
+    if svc and svc.cwd:
+        try:
+            return str(Path(file).relative_to(svc.cwd))
+        except ValueError:
+            pass
+    return file
+
+
+def _announce(bus: LogBus, cfg: Config, incidents_dir: Path, incident: Incident) -> None:
+    # A compact summary until the incident card (render.py) exists.
+    p = incident.primary
+    if incident.repeats > 1:
+        bus.info(f"🔁 incident #{incident.id} again (×{incident.repeats}): {p.service}: {p.summary}")
+        return
+    save_incident(incident, incidents_dir)
+    bus.info(f"🔎 incident #{incident.id} · {p.service} · {p.summary}")
+    if p.location:
+        loc = p.location
+        where = f"{_short_path(loc.file, cfg, p.service)}:{loc.line}" + (f" in {loc.func}" if loc.func else "")
+        bus.info(f"   at {where}")
+    if incident.request_ids:
+        others = [s for s in incident.request_services if s != p.service]
+        seen = f" · also seen in {', '.join(others)}" if others else ""
+        bus.info(f"   request {', '.join(incident.request_ids)}{seen}")
+    saved = f" · {incident.saved_to.relative_to(incidents_dir.parent.parent)}" if incident.saved_to else ""
+    bus.info(f"   {len(incident.events)} events in {', '.join(incident.services)} · "
+             f"{len(incident.timeline)} timeline lines{saved}")
+
+
 async def _up(cfg: Config, path: Path, names: list[str]) -> None:
     bus = LogBus()
     bus.subscribe(LogPrinter(names))
+    incidents_dir = path.parent / ".hammock" / "incidents"
+    tracker = IncidentTracker(
+        lambda: bus.window(float("-inf"), float("inf")),
+        lambda incident: _announce(bus, cfg, incidents_dir, incident),
+        window=cfg.correlation_window_seconds,
+        noise_paths=health_paths(cfg),
+    )
+    hub = DetectorHub(tracker.add, names)
+    bus.subscribe(hub)
     runner = Runner(cfg, names, bus)
+    runner.on_exit = lambda svc: tracker.add(service_exit_event(svc.name, svc.returncode))
+    background = [asyncio.create_task(hub.run()), asyncio.create_task(tracker.run())]
     stop = asyncio.Event()
     stopped = asyncio.Event()
     forced: list[asyncio.Task[None]] = []
@@ -87,6 +132,8 @@ async def _up(cfg: Config, path: Path, names: list[str]) -> None:
         await asyncio.gather(*forced)
         bus.info("all services stopped 🦥")
     finally:
+        for task in background:
+            task.cancel()
         stopped.set()
         await control.close()
 

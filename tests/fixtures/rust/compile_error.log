@@ -1,0 +1,10 @@
+error[E0560]: struct `Quote` has no field named `total`
+  --> src/main.rs:71:9
+   |
+71 |         total: subtotal + tax,
+   |         ^^^^^ `Quote` does not have this field
+   |
+   = note: available fields are: `total_amount`
+
+For more information about this error, try `rustc --explain E0560`.
+error: could not compile `pricing` (bin "pricing") due to 1 previous error

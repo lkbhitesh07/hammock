@@ -1,0 +1,196 @@
+[2m2026-11-04T19:55:26.753013Z[0m [32m INFO[0m pricing listening on http://127.0.0.1:7055
+
+thread 'tokio-rt-worker' (165006) panicked at src/main.rs:59:43:
+called `Option::unwrap()` on a `None` value
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:689:5
+   1: core::panicking::panic_fmt
+             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/core/src/panicking.rs:80:14
+   2: core::panicking::panic
+             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/core/src/panicking.rs:150:5
+   3: core::option::unwrap_failed
+             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/core/src/option.rs:2175:5
+   4: core::option::Option<T>::unwrap
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:1016:21
+   5: pricing::quote::{{closure}}
+             at ./src/main.rs:59:43
+   6: <F as axum::handler::Handler<(M,T1,T2),S>>::call::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/handler/mod.rs:255:43
+   7: <core::pin::Pin<P> as core::future::future::Future>::poll
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/future/future.rs:133:9
+   8: <futures_util::future::future::map::Map<Fut,F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-util-0.3.34/src/future/future/map.rs:55:44
+   9: <futures_util::future::future::Map<Fut,F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-util-0.3.34/src/lib.rs:85:35
+  10: <axum::handler::future::IntoServiceFuture<F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/macros.rs:42:39
+  11: <axum::util::MapIntoResponseFuture<F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/util.rs:94:47
+  12: <core::pin::Pin<P> as core::future::future::Future>::poll
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/future/future.rs:133:9
+  13: <tower::util::oneshot::Oneshot<S,Req> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tower-0.5.3/src/util/oneshot.rs:96:42
+  14: <axum::routing::route::RouteFuture<E> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/routing/route.rs:149:41
+  15: <axum::util::MapIntoResponseFuture<F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/util.rs:94:47
+  16: <core::pin::Pin<P> as core::future::future::Future>::poll
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/future/future.rs:133:9
+  17: axum::middleware::from_fn::Next::run::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/middleware/from_fn.rs:345:36
+  18: pricing::request_log::{{closure}}
+             at ./src/main.rs:90:33
+  19: <axum::middleware::from_fn::FromFn<F,S,I,(T1,)> as tower_service::Service<http::request::Request<axum_core::body::Body>>>::call::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/middleware/from_fn.rs:309:45
+  20: <axum::middleware::from_fn::ResponseFuture as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/middleware/from_fn.rs:375:29
+  21: <F as futures_core::future::TryFuture>::try_poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-core-0.3.34/src/future.rs:92:14
+  22: <futures_util::future::try_future::into_future::IntoFuture<Fut> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-util-0.3.34/src/future/try_future/into_future.rs:34:31
+  23: <futures_util::future::future::map::Map<Fut,F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-util-0.3.34/src/future/future/map.rs:55:44
+  24: <futures_util::future::future::Map<Fut,F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-util-0.3.34/src/lib.rs:85:35
+  25: <futures_util::future::try_future::MapErr<Fut,F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-util-0.3.34/src/lib.rs:85:35
+  26: <tower::util::map_err::MapErrFuture<F,N> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tower-0.5.3/src/macros.rs:38:38
+  27: <axum::util::MapIntoResponseFuture<F> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/util.rs:94:47
+  28: <core::pin::Pin<P> as core::future::future::Future>::poll
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/future/future.rs:133:9
+  29: <tower::util::oneshot::Oneshot<S,Req> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tower-0.5.3/src/util/oneshot.rs:96:42
+  30: <axum::routing::route::RouteFuture<E> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/routing/route.rs:149:41
+  31: <hyper_util::service::oneshot::Oneshot<S,Req> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.21/src/service/oneshot.rs:53:42
+  32: <hyper_util::service::glue::TowerToHyperServiceFuture<S,R> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.21/src/service/glue.rs:69:31
+  33: <hyper::proto::h1::dispatch::Server<S,hyper::body::incoming::Incoming> as hyper::proto::h1::dispatch::Dispatch>::poll_msg
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/proto/h1/dispatch.rs:603:48
+  34: hyper::proto::h1::dispatch::Dispatcher<D,Bs,I,T>::poll_write
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/proto/h1/dispatch.rs:364:72
+  35: hyper::proto::h1::dispatch::Dispatcher<D,Bs,I,T>::poll_loop
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/proto/h1/dispatch.rs:174:36
+  36: hyper::proto::h1::dispatch::Dispatcher<D,Bs,I,T>::poll_inner
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/proto/h1/dispatch.rs:150:21
+  37: hyper::proto::h1::dispatch::Dispatcher<D,Bs,I,T>::poll_catch
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/proto/h1/dispatch.rs:128:33
+  38: <hyper::proto::h1::dispatch::Dispatcher<D,Bs,I,T> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/proto/h1/dispatch.rs:504:14
+  39: <hyper::server::conn::http1::UpgradeableConnection<I,S> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-1.12.0/src/server/conn/http1.rs:574:51
+  40: <hyper_util::server::conn::auto::UpgradeableConnection<I,S,E> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.21/src/server/conn/auto/mod.rs:701:33
+  41: <core::pin::Pin<P> as core::future::future::Future>::poll
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/future/future.rs:133:9
+  42: axum::serve::handle_connection::{{closure}}::{{closure}}::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/macros/select.rs:710:49
+  43: <core::future::poll_fn::PollFn<F> as core::future::future::Future>::poll
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/future/poll_fn.rs:151:9
+  44: axum::serve::handle_connection::{{closure}}::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/axum-0.8.9/src/serve/mod.rs:400:13
+  45: tokio::runtime::task::core::Core<T,S>::poll::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/core.rs:380:24
+  46: tokio::loom::std::unsafe_cell::UnsafeCell<T>::with_mut
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/loom/std/unsafe_cell.rs:16:9
+  47: tokio::runtime::task::core::Core<T,S>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/core.rs:369:30
+  48: tokio::runtime::task::harness::poll_future::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:537:30
+  49: <core::panic::unwind_safe::AssertUnwindSafe<F> as core::ops::function::FnOnce<()>>::call_once
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panic/unwind_safe.rs:274:9
+  50: std::panicking::catch_unwind::do_call
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panicking.rs:581:40
+  51: __rust_try
+  52: std::panicking::catch_unwind
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  53: std::panic::catch_unwind
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  54: tokio::runtime::task::harness::poll_future
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:525:18
+  55: tokio::runtime::task::harness::Harness<T,S>::poll_inner
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:210:27
+  56: tokio::runtime::task::harness::Harness<T,S>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:155:20
+  57: tokio::runtime::task::raw::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/raw.rs:337:13
+  58: tokio::runtime::task::raw::RawTask::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/raw.rs:267:18
+  59: tokio::runtime::task::LocalNotified<S>::run
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/mod.rs:523:13
+  60: tokio::runtime::scheduler::multi_thread::worker::Context::run_task::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:705:18
+  61: tokio::task::coop::with_budget
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/task/coop/mod.rs:167:5
+  62: tokio::task::coop::budget
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/task/coop/mod.rs:133:5
+  63: tokio::runtime::scheduler::multi_thread::worker::Context::run_task
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:696:9
+  64: tokio::runtime::scheduler::multi_thread::worker::Context::run
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:595:35
+  65: tokio::runtime::scheduler::multi_thread::worker::run::{{closure}}::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:560:16
+  66: tokio::runtime::context::scoped::Scoped<T>::set
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/context/scoped.rs:40:9
+  67: tokio::runtime::context::set_scheduler::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/context.rs:186:38
+  68: std::thread::local::LocalKey<T>::try_with
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/thread/local.rs:513:12
+  69: std::thread::local::LocalKey<T>::with
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/thread/local.rs:477:20
+  70: tokio::runtime::context::set_scheduler
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/context.rs:186:17
+  71: tokio::runtime::scheduler::multi_thread::worker::run::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:557:9
+  72: tokio::runtime::context::runtime::enter_runtime
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/context/runtime.rs:65:16
+  73: tokio::runtime::scheduler::multi_thread::worker::run
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:549:5
+  74: tokio::runtime::scheduler::multi_thread::worker::Launch::launch::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/scheduler/multi_thread/worker.rs:515:45
+  75: <tokio::runtime::blocking::task::BlockingTask<T> as core::future::future::Future>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/blocking/task.rs:42:21
+  76: tokio::runtime::task::core::Core<T,S>::poll::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/core.rs:380:24
+  77: tokio::loom::std::unsafe_cell::UnsafeCell<T>::with_mut
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/loom/std/unsafe_cell.rs:16:9
+  78: tokio::runtime::task::core::Core<T,S>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/core.rs:369:30
+  79: tokio::runtime::task::harness::poll_future::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:537:30
+  80: <core::panic::unwind_safe::AssertUnwindSafe<F> as core::ops::function::FnOnce<()>>::call_once
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/panic/unwind_safe.rs:274:9
+  81: std::panicking::catch_unwind::do_call
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panicking.rs:581:40
+  82: __rust_try
+  83: std::panicking::catch_unwind
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panicking.rs:544:19
+  84: std::panic::catch_unwind
+             at /home/dev/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std/src/panic.rs:359:14
+  85: tokio::runtime::task::harness::poll_future
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:525:18
+  86: tokio::runtime::task::harness::Harness<T,S>::poll_inner
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:210:27
+  87: tokio::runtime::task::harness::Harness<T,S>::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/harness.rs:155:20
+  88: tokio::runtime::task::raw::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/raw.rs:337:13
+  89: tokio::runtime::task::raw::RawTask::poll
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/raw.rs:267:18
+  90: tokio::runtime::task::UnownedTask<S>::run
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/task/mod.rs:560:13
+  91: tokio::runtime::blocking::pool::Task::run
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/blocking/pool.rs:220:19
+  92: tokio::runtime::blocking::pool::LockedImpl::run_worker
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/blocking/pool.rs:660:22
+  93: tokio::runtime::blocking::pool::InnerImpl::run_worker
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/blocking/pool.rs:571:39
+  94: tokio::runtime::blocking::pool::Inner::run
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/blocking/pool.rs:764:18
+  95: tokio::runtime::blocking::pool::Spawner::spawn_thread::{{closure}}
+             at /home/dev/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/tokio-1.54.1/src/runtime/blocking/pool.rs:525:47
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.

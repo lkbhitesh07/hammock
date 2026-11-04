@@ -254,12 +254,16 @@ class Runner:
             for n in layer
         }
         self.stopping = False
+        # Called when a service exits on its own or can't be spawned (not on Hammock's own stops).
+        self.on_exit: Callable[[ServiceProcess], None] | None = None
         self.all_ready = False
         self.all_ready_at: float | None = None  # wall clock of the last time the whole stack became ready
         self._t0 = time.monotonic()
         self._launches: list[asyncio.Task[None]] = []
 
-    def _on_change(self, _: ServiceProcess) -> None:
+    def _on_change(self, svc: ServiceProcess) -> None:
+        if svc.state in (State.EXITED, State.FAILED) and self.on_exit and not self.stopping:
+            self.on_exit(svc)
         ready = all(s.ready.is_set() for s in self.services.values())
         if ready and not self.all_ready:
             if self.all_ready_at is None:
