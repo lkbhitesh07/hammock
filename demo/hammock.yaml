@@ -1,0 +1,26 @@
+# Hammock demo stack: Django orders API -> Rust pricing service.
+# The React shop (web) and Casdoor login come next.
+#
+#   cd demo && hammock up
+#   ./order.sh             # place an order
+#   ./bug.sh 1             # plant bug 1, then ./order.sh again
+
+# model: <ollama tag>      # chosen once the LLM step exists
+
+correlation_window_seconds: 5
+
+services:
+  pricing:                         # Rust (axum)
+    cwd: ./pricing
+    cmd: cargo run --quiet
+    env: { RUST_BACKTRACE: "1" }
+    watch: ["src/**/*.rs", "Cargo.toml"]
+    health: http://127.0.0.1:7001/health
+    health_timeout: 300            # a cold `cargo build` takes a while
+
+  api:                             # Django
+    cwd: ./api
+    cmd: uv run --quiet python manage.py runserver 8010
+    env: { PRICING_URL: "http://127.0.0.1:7001" }
+    health: http://127.0.0.1:8010/health
+    depends_on: [pricing]
