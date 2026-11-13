@@ -1,4 +1,4 @@
-"""Command line: `hammock up/down/status/restart/config`."""
+"""Command line: `hammock up/down/status/restart/config/prompt`."""
 
 from __future__ import annotations
 
@@ -17,11 +17,13 @@ from rich.text import Text
 from .config import Config, ConfigError, load_config
 from .console import LogPrinter
 from .control import AlreadyRunning, ControlServer, NotRunning, request, socket_path
-from .context import build_context
 from .correlate import health_paths
 from .detectors import DetectorHub
-from .incidents import Incident, IncidentTracker, save_incident, service_exit_event
+from .incidents import IncidentTracker, service_exit_event
+from .investigate import Investigator
+from .llm import full_prompt
 from .logbus import LogBus
+from .render import copy_to_clipboard, find_context_file
 from .runner import Runner
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help="Hammock 🦥 — one command for your local stack.")
@@ -29,6 +31,8 @@ err = Console(stderr=True)
 
 ConfigOpt = Annotated[Optional[Path], typer.Option("--config", "-c", help="Path to hammock.yaml (default: search upwards).")]
 WithOpt = Annotated[Optional[list[str]], typer.Option("--with", "-w", help="Also start this optional service (repeatable).")]
+NoLlmOpt = Annotated[bool, typer.Option("--no-llm", envvar="HAMMOCK_NO_LLM",
+                                        help="Don't call the local model, even if hammock.yaml sets one (light hardware).")]
 
 
 def _load(path: Path | None) -> tuple[Config, Path]:
@@ -40,7 +44,7 @@ def _load(path: Path | None) -> tuple[Config, Path]:
 
 
 @app.command()
-def up(config: ConfigOpt = None, with_: WithOpt = None) -> None:
+def up(config: ConfigOpt = None, with_: WithOpt = None, no_llm: NoLlmOpt = False) -> None:
     """Start the stack in dependency order and stream every service's logs. Ctrl-C stops it all."""
     cfg, path = _load(config)
     try:
@@ -48,67 +52,18 @@ def up(config: ConfigOpt = None, with_: WithOpt = None) -> None:
     except ConfigError as e:
         err.print(f"[red]✗[/] {e}")
         raise typer.Exit(2) from None
-    asyncio.run(_up(cfg, path, names))
+    asyncio.run(_up(cfg, path, names, llm=not no_llm))
 
 
-def _short_path(file: str, cfg: Config, service: str) -> str:
-    svc = cfg.services.get(service)
-    if svc and svc.cwd:
-        try:
-            return str(Path(file).relative_to(svc.cwd))
-        except ValueError:
-            pass
-    return file
-
-
-def _save_context(bus: LogBus, cfg: Config, incident: Incident, healthy_since: float | None) -> str:
-    try:
-        package = build_context(incident, cfg, healthy_since)
-        text = package.render()
-    except Exception as e:  # the summary must still appear
-        bus.info(f"   (could not build the context package: {e})")
-        return ""
-    if incident.saved_to:
-        try:
-            incident.saved_to.with_suffix(".context.md").write_text(text)
-        except OSError:
-            pass
-    return f" · context ≈{package.approx_tokens / 1000:.1f}k tokens"
-
-
-def _announce(bus: LogBus, cfg: Config, incidents_dir: Path, runner: Runner, incident: Incident) -> None:
-    # A compact summary until the incident card (render.py) exists.
-    p = incident.primary
-    if incident.repeats > 1:
-        bus.info(f"🔁 incident #{incident.id} again (×{incident.repeats}): {p.service}: {p.summary}")
-        return
-    save_incident(incident, incidents_dir)
-    context = _save_context(bus, cfg, incident, runner.first_ready_at)
-    bus.info(f"🔎 incident #{incident.id} · {p.service} · {p.summary}")
-    if p.location:
-        loc = p.location
-        where = f"{_short_path(loc.file, cfg, p.service)}:{loc.line}" + (f" in {loc.func}" if loc.func else "")
-        bus.info(f"   at {where}")
-    if incident.request_ids:
-        others = [s for s in incident.request_services if s != p.service]
-        seen = f" · also seen in {', '.join(others)}" if others else ""
-        bus.info(f"   request {', '.join(incident.request_ids)}{seen}")
-    if hint := p.details.get("hint"):
-        bus.info(f"   hint: {hint}")
-    saved = f" · {incident.saved_to.relative_to(incidents_dir.parent.parent)}" if incident.saved_to else ""
-    n = len(incident.events)
-    bus.info(f"   {n} event{'s' if n != 1 else ''} in {', '.join(incident.services)} · "
-             f"{len(incident.timeline)} timeline lines{context}{saved}")
-
-
-async def _up(cfg: Config, path: Path, names: list[str]) -> None:
+async def _up(cfg: Config, path: Path, names: list[str], llm: bool = True) -> None:
     bus = LogBus()
-    bus.subscribe(LogPrinter(names))
-    incidents_dir = path.parent / ".hammock" / "incidents"
+    console = Console(highlight=False, soft_wrap=True)
+    bus.subscribe(LogPrinter(names, console, quiet={n for n in names if cfg.services[n].check_only}))
     runner = Runner(cfg, names, bus)
+    investigator = Investigator(cfg, _incidents_dir(path), console, bus, lambda: runner.first_ready_at, llm=llm)
     tracker = IncidentTracker(
         lambda: bus.window(float("-inf"), float("inf")),
-        lambda incident: _announce(bus, cfg, incidents_dir, runner, incident),
+        investigator,
         window=cfg.correlation_window_seconds,
         noise_paths=health_paths(cfg),
     )
@@ -155,6 +110,7 @@ async def _up(cfg: Config, path: Path, names: list[str]) -> None:
     finally:
         for task in background:
             task.cancel()
+        investigator.close()
         stopped.set()
         await control.close()
 
@@ -209,6 +165,32 @@ def _duration(seconds: int) -> str:
     minutes, s = divmod(seconds, 60)
     hours, m = divmod(minutes, 60)
     return f"{hours}h{m:02d}m" if hours else f"{m}m{s:02d}s" if m else f"{s}s"
+
+
+def _incidents_dir(config_path: Path) -> Path:
+    return config_path.parent / ".hammock" / "incidents"
+
+
+@app.command()
+def prompt(
+    incident: Annotated[Optional[int], typer.Argument(help="Incident number (default: the latest incident).")] = None,
+    config: ConfigOpt = None,
+    print_only: Annotated[bool, typer.Option("--print", help="Print it; don't copy to the clipboard.")] = False,
+) -> None:
+    """Copy an incident's full prompt (instructions + context) for pasting into a bigger model."""
+    _, path = _load(config)
+    found = find_context_file(_incidents_dir(path), incident)
+    if found is None:
+        which = f"incident #{incident}" if incident is not None else "incidents"
+        err.print(f"No saved {which} in {_incidents_dir(path)}")
+        raise typer.Exit(1)
+    text = full_prompt(found.read_text())
+    tool = None if print_only else copy_to_clipboard(text)
+    if tool:
+        err.print(f"Copied {found.name} to the clipboard via {tool} (≈{len(text) // 4 / 1000:.1f}k tokens). "
+                  "It contains your logs and code: paste it only where that's allowed.")
+    else:
+        print(text)
 
 
 @app.command("config")

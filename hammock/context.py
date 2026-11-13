@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from .config import Config, Service
@@ -36,6 +36,7 @@ _LOG_TIMESTAMP = re.compile(
 @dataclass(slots=True)
 class ContextPackage:
     sections: list[tuple[str, str]]
+    changed_services: list[str] = field(default_factory=list)  # involved services with uncommitted changes
 
     def render(self) -> str:
         return redact("\n\n".join(f"## {title}\n{body}".rstrip() for title, body in self.sections)) + "\n"
@@ -48,14 +49,15 @@ class ContextPackage:
 def build_context(incident: Incident, config: Config, healthy_since: float | None = None) -> ContextPackage:
     primary = incident.primary
     related = related_services(incident, config)
+    infos = _git_infos(related, config)
     return ContextPackage([
         ("Stack", _stack_section(config, related)),
         ("Incident", _incident_section(incident, config)),
         ("Error output", clip(_relative_paths(compact_error(primary), config, primary.service), BUDGET["error"])),
         ("Timeline across services", _timeline_section(incident, BUDGET["timeline"])),
         ("Code at the failing frames", _code_section(incident, config, BUDGET["code"])),
-        ("What changed (git)", _git_section(related, config, healthy_since, BUDGET["git"])),
-    ])
+        ("What changed (git)", _git_section(infos, healthy_since, BUDGET["git"])),
+    ], changed_services=[name for name, info in infos if info and (info.diff or info.untracked)])
 
 
 # --- helpers ---------------------------------------------------------------------------------
@@ -327,7 +329,7 @@ def _age(when: float) -> str:
     return "just now"
 
 
-def _git_section(related: list[str], config: Config, healthy_since: float | None, limit: int) -> str:
+def _git_infos(related: list[str], config: Config) -> list[tuple[str, GitInfo | None]]:
     infos: list[tuple[str, GitInfo | None]] = []
     seen_paths: set[Path] = set()
     for name in related:
@@ -336,6 +338,11 @@ def _git_section(related: list[str], config: Config, healthy_since: float | None
             continue
         seen_paths.add(svc.cwd)
         infos.append((name, git_info(svc.cwd)))
+    return infos
+
+
+def _git_section(infos: list[tuple[str, GitInfo | None]], healthy_since: float | None, limit: int) -> str:
+    infos = list(infos)
     if not infos:
         return "No code-owning services involved."
 

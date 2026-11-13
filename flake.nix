@@ -19,7 +19,7 @@
           pyproject = true;
           src = ./.;
           build-system = [ python.pkgs.hatchling ];
-          dependencies = with python.pkgs; [ typer rich pydantic pyyaml httpx ];
+          dependencies = with python.pkgs; [ typer rich pydantic pyyaml httpx ollama ];
         };
       in
       {
@@ -30,11 +30,12 @@
         # nix develop: Python + uv; uv builds .venv from uv.lock using this Python.
         devShells.default = pkgs.mkShell {
           # cargo/rustc: the demo stack's pricing service is Rust.
-          packages = [ python pkgs.uv pkgs.cargo pkgs.rustc ];
+          # ollama: optional local model; start it with `ollama serve` when you want diagnoses.
+          packages = [ python pkgs.uv pkgs.cargo pkgs.rustc pkgs.ollama ];
           shellHook = ''
             export UV_PYTHON="${python}/bin/python"
             export UV_PYTHON_DOWNLOADS=never
-            uv sync --quiet
+            uv sync --quiet --all-extras
             source .venv/bin/activate
           '';
         };

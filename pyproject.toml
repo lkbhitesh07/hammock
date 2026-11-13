@@ -13,6 +13,11 @@ dependencies = [
     "httpx>=0.27",
 ]
 
+[project.optional-dependencies]
+# The local model is optional: without it Hammock still detects, correlates and shows the
+# incident card, and `hammock prompt` hands the context to any model you like.
+llm = ["ollama>=0.4"]
+
 [project.scripts]
 hammock = "hammock.cli:app"
 

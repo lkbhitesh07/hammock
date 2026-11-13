@@ -5,7 +5,8 @@
 #   ./order.sh             # place an order
 #   ./bug.sh 1             # plant bug 1, then ./order.sh again
 
-# model: <ollama tag>      # chosen once the LLM step exists
+model: gemma3:4b           # optional; needs `ollama serve` + `ollama pull gemma3:4b`.
+                           # Remove it (or run `hammock up --no-llm`) to skip the model.
 
 correlation_window_seconds: 5
 

@@ -65,6 +65,7 @@ class Incident:
     opened_at: float  # wall clock
     repeats: int = 1
     saved_to: Path | None = None
+    diagnosis: dict[str, Any] | None = None  # the model's answer, once it arrives
 
     @property
     def primary(self) -> ErrorEvent:
@@ -109,6 +110,7 @@ class Incident:
             "services": self.services,
             "request_ids": self.request_ids,
             "request_services": self.request_services,
+            "diagnosis": self.diagnosis,
             "events": [event(e) for e in self.events],
             "timeline": [
                 {"time": datetime.fromtimestamp(t.line.wall).isoformat(timespec="milliseconds"),
