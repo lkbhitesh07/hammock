@@ -39,14 +39,14 @@ api (Django, :8010)  ──POST /quote──▶  pricing (Rust/axum, :7001)
 **With Nix (recommended):** Python, uv, Rust and Ollama in one step.
 
 ```sh
-git clone <repo-url> hammock && cd hammock
+git clone https://github.com/lkbhitesh07/hammock.git hammock && cd hammock
 nix develop
 ```
 
 **Without Nix:** you need Python 3.11+, [uv](https://docs.astral.sh/uv/) and Rust (`cargo`).
 
 ```sh
-git clone <repo-url> hammock && cd hammock
+git clone https://github.com/lkbhitesh07/hammock.git hammock && cd hammock
 uv sync --all-extras
 source .venv/bin/activate
 ```

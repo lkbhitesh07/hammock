@@ -23,7 +23,7 @@
         };
       in
       {
-        # nix run github:<owner>/hammock -- up
+        # nix run github:lkbhitesh07/hammock -- up
         packages.default = hammock;
         apps.default = flake-utils.lib.mkApp { drv = hammock; };
 
