@@ -29,7 +29,8 @@
 
         # nix develop: Python + uv; uv builds .venv from uv.lock using this Python.
         devShells.default = pkgs.mkShell {
-          packages = [ python pkgs.uv ];
+          # cargo/rustc: the demo stack's pricing service is Rust.
+          packages = [ python pkgs.uv pkgs.cargo pkgs.rustc ];
           shellHook = ''
             export UV_PYTHON="${python}/bin/python"
             export UV_PYTHON_DOWNLOADS=never

@@ -34,11 +34,27 @@ _KIND_RANK = {
 }
 
 
-def service_exit_event(service: str, returncode: int | None) -> ErrorEvent:
-    text = f"{service} exited on its own (code {returncode})"
-    line = LogLine(service, text, text, "hammock", time.monotonic(), time.time())
-    return ErrorEvent(service=service, kind="service-exited", summary=text, lines=[line],
-                      details={"returncode": returncode})
+_EXIT_HINTS = {
+    126: "the command isn't executable (permissions?)",
+    127: "command not found: is it installed and on PATH in the shell that runs Hammock?",
+}
+_EXIT_TAIL = 15
+
+
+def service_exit_event(service: str, returncode: int | None, tail: list[LogLine] = ()) -> ErrorEvent:
+    """A service that died. Its last output lines are the evidence ("cargo: command not found")."""
+    tail = [l for l in tail if l.text.strip()][-_EXIT_TAIL:]
+    summary = f"{service} exited on its own (code {returncode})"
+    if tail:
+        summary += f": {tail[-1].text.strip()[:200]}"
+    details: dict[str, Any] = {"returncode": returncode}
+    if hint := _EXIT_HINTS.get(returncode):  # type: ignore[arg-type]
+        details["hint"] = hint
+    if not tail:
+        text = f"{service} exited on its own (code {returncode})"
+        tail = [LogLine(service, text, text, "hammock", time.monotonic(), time.time())]
+    return ErrorEvent(service=service, kind="service-exited", summary=summary, lines=list(tail),
+                      details=details)
 
 
 @dataclass

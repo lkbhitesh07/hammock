@@ -230,3 +230,39 @@ def test_runner_reports_exits_but_not_its_own_stops(tmp_path):
         return exits
 
     assert asyncio.run(go()) == [("boom", 7)]
+
+
+def test_exit_event_explains_itself_with_the_last_output():
+    tail = [LogLine("pricing", t, t, "stderr", 1.0 + i, 1.7e9) for i, t in
+            enumerate(["Compiling pricing", "", "bash: line 1: cargo: command not found"])]
+    event = service_exit_event("pricing", 127, tail)
+    assert event.summary == "pricing exited on its own (code 127): bash: line 1: cargo: command not found"
+    assert "command not found" in event.details["hint"]
+    assert [l.text for l in event.lines] == ["Compiling pricing", "bash: line 1: cargo: command not found"]
+
+
+def test_exit_event_without_output():
+    event = service_exit_event("svc", 3)
+    assert event.summary == "svc exited on its own (code 3)"
+    assert "hint" not in event.details and len(event.lines) == 1
+
+
+def test_runner_tells_you_what_waits_on_a_dead_service(tmp_path):
+    async def go():
+        cfg = Config.model_validate({"services": {
+            # A health check keeps api waiting (without one, pricing would count as ready once spawned).
+            "pricing": {"cmd": "no-such-command-xyz", "cwd": str(tmp_path), "health": "tcp://127.0.0.1:9"},
+            "api": {"cmd": "sleep 30", "cwd": str(tmp_path), "depends_on": ["pricing"]},
+        }})
+        bus = LogBus()
+        runner = Runner(cfg, list(cfg.services), bus)
+        await runner.up()
+        while runner.services["pricing"].state is not State.EXITED:
+            await asyncio.sleep(0.05)
+        await runner.down()
+        return runner, bus
+
+    runner, bus = asyncio.run(go())
+    assert runner.services["pricing"].returncode == 127
+    assert any(l.text == "  api is waiting on pricing: fix it, then run `hammock restart pricing`"
+               for l in bus.lines("hammock"))

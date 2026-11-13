@@ -22,7 +22,15 @@ case "${1:-}" in
     if grep -q 'total_amount:' "$pricing"; then echo "bug 1: planted"; else echo "bug 1: off"; fi
     ;;
   *)
-    echo "usage: $0 1 | reset | status" >&2
+    "$0" status
+    cat >&2 <<USAGE
+
+Nothing changed. Usage:
+  $0 1        plant bug 1 (pricing renames 'total' to 'total_amount'),
+              then: hammock restart pricing && ./order.sh
+  $0 reset    remove all bugs
+  $0 status   show which bugs are planted
+USAGE
     exit 2
     ;;
 esac

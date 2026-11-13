@@ -10,9 +10,9 @@ Coming next: a React shop page (`web`) in front of `api`, and Casdoor login.
 
 ## Requirements
 
-- `cargo` (Rust stable) on your `PATH`
-- `uv` (it creates `api/.venv` on first run)
-- `curl`
+The repo's Nix dev shell has everything: run `nix develop` at the repo root first.
+
+Without Nix you need `cargo` (Rust stable) and `uv` on your `PATH` (uv creates `api/.venv` on first run), plus `curl`.
 
 ## Run it
 
@@ -21,6 +21,8 @@ cd demo
 hammock up               # terminal 1
 ./order.sh               # terminal 2: places an order, prints the response
 ```
+
+The scripts need bash: run them as `./order.sh`, not `sh order.sh`.
 
 Every request carries an `X-Request-ID`. Both services log it, so one request can be followed across the stack.
 

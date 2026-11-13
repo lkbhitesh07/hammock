@@ -258,12 +258,19 @@ class Runner:
         self.on_exit: Callable[[ServiceProcess], None] | None = None
         self.all_ready = False
         self.all_ready_at: float | None = None  # wall clock of the last time the whole stack became ready
+        self.first_ready_at: float | None = None  # wall clock of the first time this session
         self._t0 = time.monotonic()
         self._launches: list[asyncio.Task[None]] = []
 
     def _on_change(self, svc: ServiceProcess) -> None:
-        if svc.state in (State.EXITED, State.FAILED) and self.on_exit and not self.stopping:
-            self.on_exit(svc)
+        if svc.state in (State.EXITED, State.FAILED) and not self.stopping:
+            waiting = [n for n, s in self.services.items()
+                       if svc.name in s.spec.depends_on and s.state is State.WAITING]
+            if waiting:
+                self.bus.info(f"  {', '.join(waiting)} {'is' if len(waiting) == 1 else 'are'} waiting on "
+                              f"{svc.name}: fix it, then run `hammock restart {svc.name}`")
+            if self.on_exit:
+                self.on_exit(svc)
         ready = all(s.ready.is_set() for s in self.services.values())
         if ready and not self.all_ready:
             if self.all_ready_at is None:
@@ -271,6 +278,8 @@ class Runner:
             else:
                 self.bus.info("✓ stack ready again")
             self.all_ready_at = time.time()
+            if self.first_ready_at is None:
+                self.first_ready_at = self.all_ready_at
         self.all_ready = ready
 
     async def up(self) -> None:

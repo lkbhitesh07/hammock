@@ -17,6 +17,7 @@ from rich.text import Text
 from .config import Config, ConfigError, load_config
 from .console import LogPrinter
 from .control import AlreadyRunning, ControlServer, NotRunning, request, socket_path
+from .context import build_context
 from .correlate import health_paths
 from .detectors import DetectorHub
 from .incidents import Incident, IncidentTracker, save_incident, service_exit_event
@@ -60,13 +61,29 @@ def _short_path(file: str, cfg: Config, service: str) -> str:
     return file
 
 
-def _announce(bus: LogBus, cfg: Config, incidents_dir: Path, incident: Incident) -> None:
+def _save_context(bus: LogBus, cfg: Config, incident: Incident, healthy_since: float | None) -> str:
+    try:
+        package = build_context(incident, cfg, healthy_since)
+        text = package.render()
+    except Exception as e:  # the summary must still appear
+        bus.info(f"   (could not build the context package: {e})")
+        return ""
+    if incident.saved_to:
+        try:
+            incident.saved_to.with_suffix(".context.md").write_text(text)
+        except OSError:
+            pass
+    return f" · context ≈{package.approx_tokens / 1000:.1f}k tokens"
+
+
+def _announce(bus: LogBus, cfg: Config, incidents_dir: Path, runner: Runner, incident: Incident) -> None:
     # A compact summary until the incident card (render.py) exists.
     p = incident.primary
     if incident.repeats > 1:
         bus.info(f"🔁 incident #{incident.id} again (×{incident.repeats}): {p.service}: {p.summary}")
         return
     save_incident(incident, incidents_dir)
+    context = _save_context(bus, cfg, incident, runner.first_ready_at)
     bus.info(f"🔎 incident #{incident.id} · {p.service} · {p.summary}")
     if p.location:
         loc = p.location
@@ -76,25 +93,29 @@ def _announce(bus: LogBus, cfg: Config, incidents_dir: Path, incident: Incident)
         others = [s for s in incident.request_services if s != p.service]
         seen = f" · also seen in {', '.join(others)}" if others else ""
         bus.info(f"   request {', '.join(incident.request_ids)}{seen}")
+    if hint := p.details.get("hint"):
+        bus.info(f"   hint: {hint}")
     saved = f" · {incident.saved_to.relative_to(incidents_dir.parent.parent)}" if incident.saved_to else ""
-    bus.info(f"   {len(incident.events)} events in {', '.join(incident.services)} · "
-             f"{len(incident.timeline)} timeline lines{saved}")
+    n = len(incident.events)
+    bus.info(f"   {n} event{'s' if n != 1 else ''} in {', '.join(incident.services)} · "
+             f"{len(incident.timeline)} timeline lines{context}{saved}")
 
 
 async def _up(cfg: Config, path: Path, names: list[str]) -> None:
     bus = LogBus()
     bus.subscribe(LogPrinter(names))
     incidents_dir = path.parent / ".hammock" / "incidents"
+    runner = Runner(cfg, names, bus)
     tracker = IncidentTracker(
         lambda: bus.window(float("-inf"), float("inf")),
-        lambda incident: _announce(bus, cfg, incidents_dir, incident),
+        lambda incident: _announce(bus, cfg, incidents_dir, runner, incident),
         window=cfg.correlation_window_seconds,
         noise_paths=health_paths(cfg),
     )
     hub = DetectorHub(tracker.add, names)
     bus.subscribe(hub)
-    runner = Runner(cfg, names, bus)
-    runner.on_exit = lambda svc: tracker.add(service_exit_event(svc.name, svc.returncode))
+    runner.on_exit = lambda svc: tracker.add(service_exit_event(
+        svc.name, svc.returncode, [l for l in bus.lines(svc.name) if l.mono >= (svc.started_at or 0)]))
     background = [asyncio.create_task(hub.run()), asyncio.create_task(tracker.run())]
     stop = asyncio.Event()
     stopped = asyncio.Event()
